@@ -13,7 +13,8 @@ class JobWidget(QtGui.QWidget, Ui_Form):
 class View(QtGui.QWidget):
     def __init__(self):
         super(View, self).__init__()
-
+        self.setWindowFlags(QtCore.Qt.Popup)
+        # self.setWindowFlags(QtCore.Qt.Drawer)
         self.tree = QtGui.QTreeWidget()
         self.tree.setHeaderLabel('Job')
         self.tree.setHeaderHidden(True)
@@ -50,13 +51,34 @@ class Controller(QtCore.QObject):
         self.view.update_tree(tokens)
 
 
+class SystemTrayIcon(QtGui.QSystemTrayIcon):
+    def __init__(self, icon, parent=None):
+        QtGui.QSystemTrayIcon.__init__(self, icon, parent)
+
+        self.menu = QtGui.QMenu(parent)
+        exitAction = self.menu.addAction("Exit")
+        exitAction.triggered.connect(sys.exit)
+        self.setContextMenu(self.menu)
+
+        self.activated.connect(self.on_clicked)
+        self.con = None
+
+    def on_clicked(self):
+        if self.con is None:
+            self.con = Controller()
+            self.con.view.show()
+        else:
+            self.con.view.close()
+            self.con = None
+
 
 if __name__ == "__main__":
 
     app = QtGui.QApplication(sys.argv)
-
-    con = Controller()
-    #con.view.setWindowFlags(con.view.windowFlags() | QtCore.Qt.FramelessWindowHint)
-    con.view.show()
+    style = app.style()
+    w = QtGui.QWidget()
+    icon = QtGui.QIcon(style.standardPixmap(QtGui.QStyle.SP_ComputerIcon))
+    trayIcon = SystemTrayIcon(icon, w)
+    trayIcon.show()
 
     app.exec_()
